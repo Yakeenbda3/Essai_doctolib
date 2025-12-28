@@ -8,6 +8,7 @@ interface Service {
   id: string;
   name: string;
   description: string;
+  icon: string;
 }
 
 interface DayData {
@@ -26,21 +27,21 @@ interface PatientData {
   notes: string;
 }
 
-// Data
+// Data with icons
 const services: Service[] = [
-  { id: '1', name: 'Consultation', description: 'Adulte(s) connu(s)' },
-  { id: '2', name: 'Nouveau patient', description: '' },
-  { id: '3', name: 'Échographie', description: 'Rein - Vésicule - Grossesse - Musculo-squelettique' },
-  { id: '4', name: 'Dépistage Covid Antigénique PCR', description: 'PCR, Sein, Utérus, Prostate, Mélanome, Poumons' },
-  { id: '5', name: 'Grossesse', description: 'Suivi obstétrical et échographie' },
-  { id: '6', name: 'Gynécologie médicale', description: 'Troubles du cycle, Contraception, DIU, Ménopause' },
-  { id: '7', name: 'Télémédecine dont COVID-19', description: 'Consultation à distance' },
-  { id: '8', name: 'Aptitude sportive', description: 'Certificat médical - Électrocardiogramme' },
-  { id: '9', name: 'Suture', description: 'Anesthésie locale' },
-  { id: '10', name: 'Allaitement/pédiatrie', description: '' },
-  { id: '11', name: 'Conseils aux voyageurs / Travel advice', description: 'Prévention - Country risk assessment' },
-  { id: '12', name: 'Pressothérapie', description: '' },
-  { id: '13', name: 'Rendez-vous professionnel', description: '' },
+  { id: '1', name: 'Consultation', description: 'Adulte(s) connu(s)', icon: '🩺' },
+  { id: '2', name: 'Nouveau patient', description: 'Première visite', icon: '👤' },
+  { id: '3', name: 'Échographie', description: 'Rein, Vésicule, Grossesse, Musculo-squelettique', icon: '📊' },
+  { id: '4', name: 'Dépistage Covid', description: 'PCR et Antigénique', icon: '🧬' },
+  { id: '5', name: 'Grossesse', description: 'Suivi obstétrical et échographie', icon: '🤱' },
+  { id: '6', name: 'Gynécologie médicale', description: 'Contraception, DIU, Ménopause', icon: '💜' },
+  { id: '7', name: 'Télémédecine', description: 'Consultation à distance', icon: '💻' },
+  { id: '8', name: 'Aptitude sportive', description: 'Certificat médical, ECG', icon: '🏃' },
+  { id: '9', name: 'Suture', description: 'Anesthésie locale', icon: '🩹' },
+  { id: '10', name: 'Pédiatrie', description: 'Allaitement et soins enfants', icon: '👶' },
+  { id: '11', name: 'Conseils voyageurs', description: 'Prévention et vaccinations', icon: '✈️' },
+  { id: '12', name: 'Pressothérapie', description: 'Drainage lymphatique', icon: '💆' },
+  { id: '13', name: 'RDV Professionnel', description: 'Consultations professionnelles', icon: '💼' },
 ];
 
 const timeSlots = [
@@ -61,516 +62,108 @@ export default function Home() {
     firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: ''
   });
 
-  // Generate week days
   useEffect(() => {
-    const dayNames = ['Dim.', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Sam.'];
-    const monthNames = ['Janv.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
-
+    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
     const monday = new Date(weekStart);
     const dow = monday.getDay();
     monday.setDate(monday.getDate() - (dow === 0 ? 6 : dow - 1));
-
     const newDays: DayData[] = [];
     for (let i = 0; i < 5; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      newDays.push({
-        date: d,
-        dayName: dayNames[d.getDay()],
-        dayNum: d.getDate(),
-        month: monthNames[d.getMonth()]
-      });
+      newDays.push({ date: d, dayName: dayNames[d.getDay()], dayNum: d.getDate(), month: monthNames[d.getMonth()] });
     }
     setDays(newDays);
-    if (!selectedDay && newDays.length > 0) {
-      setSelectedDay(newDays[2]); // Select Wednesday by default
-    }
+    if (!selectedDay && newDays.length > 0) setSelectedDay(newDays[2]);
   }, [weekStart]);
 
-  // Generate random available slots when day changes
   useEffect(() => {
     if (selectedDay) {
-      const available = timeSlots.filter(() => Math.random() > 0.4);
-      setAvailableSlots(available);
+      setAvailableSlots(timeSlots.filter(() => Math.random() > 0.35));
     }
   }, [selectedDay?.date.toISOString()]);
 
   const getWeekLabel = () => {
     if (days.length === 0) return '';
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    return `Semaine du ${days[0].dayNum} ${months[days[0].date.getMonth()]}`;
+    return `${days[0].dayNum} - ${days[4].dayNum} ${months[days[0].date.getMonth()]}`;
   };
 
   const formatDate = (date: Date, time: string) => {
-    const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-    const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} à ${time}`;
+    const d = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const m = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    return `${d[date.getDay()]} ${date.getDate()} ${m[date.getMonth()]} à ${time}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep(4);
+  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); setStep(4); };
+
+  // Premium color palette
+  const colors = {
+    primary: '#0066FF',
+    primaryLight: '#E8F1FF',
+    primaryDark: '#0052CC',
+    accent: '#00C48C',
+    accentLight: '#E6FAF5',
+    background: '#F8FAFC',
+    card: '#FFFFFF',
+    text: '#0F172A',
+    textSecondary: '#64748B',
+    textMuted: '#94A3B8',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
+    warning: '#FF9500',
+    warningLight: '#FFF8E6',
+    error: '#FF3B30',
+    errorLight: '#FFF0F0',
+    success: '#00C48C',
+    successLight: '#E6FAF5',
   };
 
-  // Styles
-  const styles = {
-    container: {
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: '0 20px',
-    } as React.CSSProperties,
-
-    // Top Navigation Bar
-    navbar: {
-      background: '#fff',
-      borderBottom: '1px solid #e5e7eb',
-      padding: '12px 0',
-      position: 'sticky' as const,
-      top: 0,
-      zIndex: 100,
-    } as React.CSSProperties,
-
-    navbarInner: {
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: '0 20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: '16px',
-    } as React.CSSProperties,
-
-    navLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-    } as React.CSSProperties,
-
-    navLogo: {
-      height: '44px',
-      width: 'auto',
-    } as React.CSSProperties,
-
-    navTitle: {
-      fontSize: '14px',
-      fontWeight: 600,
-      color: '#1e3a5f',
-    } as React.CSSProperties,
-
-    navRight: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '20px',
-    } as React.CSSProperties,
-
-    navContact: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      fontSize: '13px',
-      color: '#4b5563',
-      textDecoration: 'none',
-    } as React.CSSProperties,
-
-    navPhone: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      fontSize: '13px',
-      fontWeight: 500,
-      color: '#3b82f6',
-      textDecoration: 'none',
-    } as React.CSSProperties,
-
-    // Services
-    title: {
-      fontSize: '20px',
-      fontWeight: 600,
-      margin: '24px 0 16px',
-      color: '#111827',
-    } as React.CSSProperties,
-
-    servicesList: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '12px',
-    } as React.CSSProperties,
-
-    serviceItem: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px',
-      background: '#fff',
-      borderRadius: '12px',
-      border: '1px solid #e5e7eb',
-      gap: '12px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-    } as React.CSSProperties,
-
-    serviceInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      flex: 1,
-      minWidth: 0,
-    } as React.CSSProperties,
-
-    serviceImage: {
-      width: '44px',
-      height: '44px',
-      borderRadius: '8px',
-      background: '#e5e7eb',
-      flexShrink: 0,
-    } as React.CSSProperties,
-
-    serviceText: {
-      minWidth: 0,
-    } as React.CSSProperties,
-
-    serviceName: {
-      fontWeight: 500,
-      color: '#111827',
-      fontSize: '15px',
-    } as React.CSSProperties,
-
-    serviceDesc: {
-      fontSize: '13px',
-      color: '#6b7280',
-      whiteSpace: 'nowrap' as const,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-    } as React.CSSProperties,
-
-    chooseBtn: {
-      background: '#3b82f6',
-      color: '#fff',
-      border: 'none',
-      padding: '8px 20px',
-      borderRadius: '20px',
-      fontSize: '14px',
-      fontWeight: 500,
-      flexShrink: 0,
-    } as React.CSSProperties,
-
-    // Info boxes
-    infoBox: {
-      padding: '16px',
-      borderRadius: '8px',
-      marginTop: '16px',
-      fontSize: '14px',
-    } as React.CSSProperties,
-
-    warningBox: {
-      background: '#fef3c7',
-      borderLeft: '4px solid #f59e0b',
-    } as React.CSSProperties,
-
-    infoBoxBlue: {
-      background: '#dbeafe',
-      borderLeft: '4px solid #3b82f6',
-    } as React.CSSProperties,
-
-    grayBox: {
-      background: '#f3f4f6',
-    } as React.CSSProperties,
-
-    badge: {
-      display: 'inline-block',
-      padding: '8px 16px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 500,
-      marginRight: '8px',
-      marginTop: '16px',
-    } as React.CSSProperties,
-
-    badgePrimary: {
-      background: '#3b82f6',
-      color: '#fff',
-    } as React.CSSProperties,
-
-    badgeOutline: {
-      background: '#fff',
-      border: '1px solid #d1d5db',
-      color: '#4b5563',
-    } as React.CSSProperties,
-
-    // Page 2 - Date picker
-    backBtn: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      background: 'none',
-      border: 'none',
-      color: '#6b7280',
-      fontSize: '15px',
-      padding: '20px 0',
-    } as React.CSSProperties,
-
-    centerContent: {
-      textAlign: 'center' as const,
-    } as React.CSSProperties,
-
-    iconCircle: {
-      width: '64px',
-      height: '64px',
-      background: '#dbeafe',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 16px',
-    } as React.CSSProperties,
-
-    pageTitle: {
-      fontSize: '28px',
-      fontWeight: 700,
-      color: '#111827',
-      marginBottom: '8px',
-    } as React.CSSProperties,
-
-    subtitle: {
-      color: '#6b7280',
-      marginBottom: '32px',
-    } as React.CSSProperties,
-
-    weekNav: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '24px',
-    } as React.CSSProperties,
-
-    navBtn: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      background: 'none',
-      border: 'none',
-      color: '#6b7280',
-      fontSize: '14px',
-    } as React.CSSProperties,
-
-    daysGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(5, 1fr)',
-      gap: '8px',
-      marginBottom: '32px',
-    } as React.CSSProperties,
-
-    dayCard: {
-      padding: '16px 8px',
-      textAlign: 'center' as const,
-      borderRadius: '12px',
-      border: '2px solid transparent',
-      background: '#fff',
-      cursor: 'pointer',
-    } as React.CSSProperties,
-
-    dayCardSelected: {
-      background: '#dbeafe',
-      borderColor: '#3b82f6',
-    } as React.CSSProperties,
-
-    dayName: {
-      fontSize: '13px',
-      color: '#6b7280',
-    } as React.CSSProperties,
-
-    dayNum: {
-      fontSize: '28px',
-      fontWeight: 600,
-      color: '#111827',
-      margin: '4px 0',
-    } as React.CSSProperties,
-
-    dayMonth: {
-      fontSize: '12px',
-      color: '#9ca3af',
-    } as React.CSSProperties,
-
-    slotsLabel: {
-      textAlign: 'center' as const,
-      color: '#6b7280',
-      marginBottom: '16px',
-      fontSize: '15px',
-    } as React.CSSProperties,
-
-    slotsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
-      gap: '8px',
-    } as React.CSSProperties,
-
-    slot: {
-      padding: '10px',
-      textAlign: 'center' as const,
-      borderRadius: '8px',
-      border: '1px solid #e5e7eb',
-      background: '#fff',
-      fontSize: '14px',
-      fontWeight: 500,
-      color: '#374151',
-      cursor: 'pointer',
-    } as React.CSSProperties,
-
-    slotUnavailable: {
-      background: '#f9fafb',
-      color: '#d1d5db',
-      cursor: 'not-allowed',
-      border: '1px solid transparent',
-    } as React.CSSProperties,
-
-    slotSelected: {
-      background: '#3b82f6',
-      color: '#fff',
-      borderColor: '#3b82f6',
-    } as React.CSSProperties,
-
-    // Page 3 - Form
-    formContainer: {
-      maxWidth: '500px',
-      margin: '0 auto',
-    } as React.CSSProperties,
-
-    formGrid: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '16px',
-    } as React.CSSProperties,
-
-    formField: {
-      marginBottom: '16px',
-    } as React.CSSProperties,
-
-    formLabel: {
-      display: 'block',
-      fontSize: '14px',
-      fontWeight: 500,
-      color: '#374151',
-      marginBottom: '8px',
-    } as React.CSSProperties,
-
-    formInput: {
-      width: '100%',
-      padding: '14px 16px',
-      background: '#f3f4f6',
-      border: 'none',
-      borderRadius: '10px',
-      fontSize: '16px',
-      color: '#111827',
-      outline: 'none',
-    } as React.CSSProperties,
-
-    formTextarea: {
-      width: '100%',
-      padding: '14px 16px',
-      background: '#f3f4f6',
-      border: 'none',
-      borderRadius: '10px',
-      fontSize: '16px',
-      color: '#111827',
-      outline: 'none',
-      resize: 'none' as const,
-      minHeight: '100px',
-    } as React.CSSProperties,
-
-    noteBox: {
-      background: '#f3f4f6',
-      padding: '16px',
-      borderRadius: '10px',
-      fontSize: '14px',
-      color: '#374151',
-      marginBottom: '24px',
-    } as React.CSSProperties,
-
-    submitBtn: {
-      width: '100%',
-      padding: '16px',
-      background: '#3b82f6',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '30px',
-      fontSize: '16px',
-      fontWeight: 600,
-    } as React.CSSProperties,
-
-    // Page 4 - Confirmation
-    successIcon: {
-      width: '80px',
-      height: '80px',
-      background: '#dcfce7',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 20px',
-    } as React.CSSProperties,
-
-    summaryBox: {
-      background: '#f9fafb',
-      borderRadius: '12px',
-      padding: '24px',
-      marginBottom: '24px',
-    } as React.CSSProperties,
-
-    summaryItem: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '16px',
-      marginBottom: '20px',
-    } as React.CSSProperties,
-
-    summaryIcon: {
-      width: '40px',
-      height: '40px',
-      background: '#dbeafe',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-    } as React.CSSProperties,
-
-    summaryLabel: {
-      fontSize: '13px',
-      color: '#6b7280',
-    } as React.CSSProperties,
-
-    summaryValue: {
-      fontWeight: 500,
-      color: '#111827',
-    } as React.CSSProperties,
-  };
-
-  // Navbar Component
+  // Navbar
   const Navbar = () => (
-    <nav style={styles.navbar}>
-      <div style={styles.navbarInner}>
-        <div style={styles.navLeft}>
-          <Image
-            src="/logo.png"
-            alt="Centre Médical Pont de l'Arc"
-            width={100}
-            height={44}
-            style={{ height: '44px', width: 'auto' }}
-          />
-          <span style={styles.navTitle}>Centre Médical Pont de l&apos;Arc</span>
+    <nav style={{
+      background: 'rgba(255,255,255,0.95)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: `1px solid ${colors.border}`,
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+    }}>
+      <div style={{
+        maxWidth: '1000px',
+        margin: '0 auto',
+        padding: '16px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Image src="/logo.png" alt="CMPA" width={120} height={48} style={{ height: '48px', width: 'auto' }} />
         </div>
-        <div style={styles.navRight}>
-          <a href="mailto:aixecho462@gmail.com" style={styles.navContact}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Contact
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <a href="tel:0486319411" style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            color: colors.text, textDecoration: 'none', fontSize: '14px', fontWeight: 500,
+          }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '10px',
+              background: colors.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="18" height="18" fill="none" stroke={colors.primary} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </div>
+            <span style={{ color: colors.textSecondary }}>04 86 31 94 11</span>
           </a>
-          <a href="tel:0486319411" style={styles.navPhone}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            04 86 31 94 11
-          </a>
+          <button style={{
+            background: colors.primary, color: '#fff', border: 'none',
+            padding: '10px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 600,
+            cursor: 'pointer', transition: 'all 0.2s',
+          }}>
+            Urgence: 15
+          </button>
         </div>
       </div>
     </nav>
@@ -579,405 +172,461 @@ export default function Home() {
   // PAGE 1: Services
   if (step === 1) {
     return (
-      <>
+      <div style={{ minHeight: '100vh', background: colors.background }}>
         <Navbar />
-        <div style={styles.container}>
-          {/* Services */}
-          <h1 style={styles.title}>Prendre rendez-vous pour</h1>
 
-        <div style={styles.servicesList}>
-          {services.map((service) => (
-            <div key={service.id} style={styles.serviceItem}>
-              <div style={styles.serviceInfo}>
-                <div style={styles.serviceImage} />
-                <div style={styles.serviceText}>
-                  <div style={styles.serviceName}>{service.name}</div>
-                  {service.description && (
-                    <div style={styles.serviceDesc}>{service.description}</div>
-                  )}
-                </div>
-              </div>
-              <button
-                style={styles.chooseBtn}
-                onClick={() => { setSelectedService(service); setStep(2); }}
-              >
-                Choisir
-              </button>
+        {/* Hero Section */}
+        <div style={{
+          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryDark} 100%)`,
+          padding: '48px 24px',
+          color: '#fff',
+        }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', opacity: 0.9 }}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              </svg>
+              <span style={{ fontSize: '14px' }}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</span>
             </div>
-          ))}
-        </div>
-
-        {/* Info boxes */}
-        <div style={{ ...styles.infoBox, ...styles.warningBox }}>
-          <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '4px' }}>
-            Informations Urgence / Emergency
-          </div>
-          <div style={{ color: '#92400e' }}>
-            <strong>Important:</strong> en cas d&apos;urgence veuillez téléphoner directement au <strong>15</strong>.
-          </div>
-          <div style={{ color: '#92400e' }}>
-            <strong>Important:</strong> in case of emergency please call directly at <strong>04 86 31 94 11</strong>. If no let <strong>15</strong>
+            <h1 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px', letterSpacing: '-0.5px' }}>
+              Centre Médical Pont de l&apos;Arc
+            </h1>
+            <p style={{ fontSize: '16px', opacity: 0.9 }}>
+              Dr. Laurent GRIMAUD • Médecine Générale et Spécialisée
+            </p>
           </div>
         </div>
 
-        <div>
-          <span style={{ ...styles.badge, ...styles.badgePrimary }}>
-            MÉDECINE GÉNÉRALE ET SPÉCIALISÉE URGENCES
-          </span>
-          <span style={{ ...styles.badge, ...styles.badgeOutline }}>
-            CONVENTIONNÉ SECTEUR 2 AVEC L&apos;ASSURANCE MALADIE
-          </span>
-        </div>
+        {/* Services Grid */}
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 24px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, color: colors.text, marginBottom: '24px' }}>
+            Prendre rendez-vous
+          </h2>
 
-        <div style={{ marginTop: '16px', fontSize: '14px', color: '#6b7280' }}>
-          Maître de Stage des Universités
-        </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+            {services.map((service) => (
+              <button
+                key={service.id}
+                onClick={() => { setSelectedService(service); setStep(2); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '16px',
+                  padding: '20px', background: colors.card, border: `1px solid ${colors.border}`,
+                  borderRadius: '16px', cursor: 'pointer', textAlign: 'left',
+                  transition: 'all 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary;
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,102,255,0.15)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = colors.border;
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div style={{
+                  width: '52px', height: '52px', borderRadius: '14px',
+                  background: colors.primaryLight, display: 'flex',
+                  alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0,
+                }}>
+                  {service.icon}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: colors.text, fontSize: '15px', marginBottom: '4px' }}>
+                    {service.name}
+                  </div>
+                  <div style={{ fontSize: '13px', color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {service.description}
+                  </div>
+                </div>
+                <svg width="20" height="20" fill="none" stroke={colors.textMuted} viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
 
-        <div style={{ ...styles.infoBox, ...styles.grayBox }}>
-          <div style={{ fontWeight: 600, marginBottom: '4px' }}>À noter</div>
-          <div>
-            Un médecin collaborateur adjoint ou un remplaçant peut{' '}
-            <span style={{ color: '#3b82f6' }}>vous recevoir en l&apos;absence du Dr GRIMAUD</span>{' '}
-            dans ce cas vous serez informés avant.
+          {/* Info Cards */}
+          <div style={{ marginTop: '32px', display: 'grid', gap: '16px' }}>
+            <div style={{
+              padding: '20px', borderRadius: '16px',
+              background: colors.warningLight, border: `1px solid ${colors.warning}20`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '12px',
+                  background: `${colors.warning}20`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" fill="none" stroke={colors.warning} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <span style={{ fontWeight: 600, color: '#92400e', fontSize: '15px' }}>Urgences</span>
+              </div>
+              <p style={{ color: '#78350f', fontSize: '14px', lineHeight: 1.6 }}>
+                En cas d&apos;urgence, appelez le <strong>15</strong> (SAMU) ou le <strong>04 86 31 94 11</strong>
+              </p>
+            </div>
+
+            <div style={{
+              padding: '20px', borderRadius: '16px',
+              background: colors.primaryLight, border: `1px solid ${colors.primary}20`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{
+                  width: '40px', height: '40px', borderRadius: '12px',
+                  background: `${colors.primary}20`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" fill="none" stroke={colors.primary} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span style={{ fontWeight: 600, color: colors.primaryDark, fontSize: '15px' }}>Informations pratiques</span>
+              </div>
+              <p style={{ color: '#1e40af', fontSize: '14px', lineHeight: 1.6 }}>
+                Pensez à vous munir de votre <strong>carte vitale</strong> et <strong>mutuelle</strong>.<br />
+                Paiements acceptés : CB, chèques, espèces.
+              </p>
+            </div>
+          </div>
+
+          {/* Badges */}
+          <div style={{ marginTop: '24px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{
+              padding: '8px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 600,
+              background: colors.primary, color: '#fff',
+            }}>
+              Conventionné Secteur 2
+            </span>
+            <span style={{
+              padding: '8px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 500,
+              background: colors.card, color: colors.textSecondary, border: `1px solid ${colors.border}`,
+            }}>
+              Maître de Stage des Universités
+            </span>
           </div>
         </div>
-
-        <div style={{ ...styles.infoBox, ...styles.infoBoxBlue }}>
-          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '4px' }}>RDV Télémédecine</div>
-          <div style={{ color: '#1e40af' }}>
-            Merci de penser a vous munir de votre <strong>carte vitale et mutuelle</strong> ou à défaut de vos attestations de droit.
-          </div>
-          <div style={{ color: '#1e40af' }}>Pour les bénéficiaires de la CMU aussi.</div>
-          <div style={{ color: '#1e40af' }}><strong>Moyens de paiement:</strong> virement bancaire, chèques, espèces.</div>
-        </div>
-
-        <div style={{ marginTop: '16px', marginBottom: '40px', fontSize: '14px' }}>
-          <a href="#" style={{ color: '#3b82f6' }}>www.ameli.direct.amelie.fr</a>
-          <div style={{ color: '#9ca3af', marginTop: '4px' }}>Démarche RSE et RGPD</div>
-        </div>
-        </div>
-      </>
+      </div>
     );
   }
 
-  // PAGE 2: Date & Time
+  // PAGE 2: Date & Time Selection
   if (step === 2) {
     return (
-      <>
+      <div style={{ minHeight: '100vh', background: colors.background }}>
         <Navbar />
-        <div style={styles.container}>
-          <button style={styles.backBtn} onClick={() => setStep(1)}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Retour
-        </button>
-
-        <div style={styles.centerContent}>
-          <div style={styles.iconCircle}>
-            <svg width="28" height="28" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h1 style={styles.pageTitle}>Choisissez votre créneau</h1>
-          <p style={styles.subtitle}>Service sélectionné: <strong>{selectedService?.name}</strong></p>
-        </div>
-
-        <div style={styles.weekNav}>
-          <button style={styles.navBtn} onClick={() => {
-            const prev = new Date(weekStart);
-            prev.setDate(prev.getDate() - 7);
-            setWeekStart(prev);
+        <div style={{ maxWidth: '700px', margin: '0 auto', padding: '32px 24px' }}>
+          {/* Back Button */}
+          <button onClick={() => setStep(1)} style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'none', border: 'none', color: colors.textSecondary,
+            fontSize: '14px', cursor: 'pointer', marginBottom: '32px', padding: 0,
           }}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Semaine précédente
+            Retour
           </button>
-          <span style={{ fontWeight: 500 }}>{getWeekLabel()}</span>
-          <button style={styles.navBtn} onClick={() => {
-            const next = new Date(weekStart);
-            next.setDate(next.getDate() + 7);
-            setWeekStart(next);
+
+          {/* Selected Service Card */}
+          <div style={{
+            padding: '16px 20px', background: colors.card, borderRadius: '14px',
+            border: `1px solid ${colors.border}`, marginBottom: '32px',
+            display: 'flex', alignItems: 'center', gap: '16px',
           }}>
-            Semaine suivante
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        <div style={styles.daysGrid}>
-          {days.map((day) => (
-            <button
-              key={day.date.toISOString()}
-              onClick={() => setSelectedDay(day)}
-              style={{
-                ...styles.dayCard,
-                ...(selectedDay?.date.toDateString() === day.date.toDateString() ? styles.dayCardSelected : {})
-              }}
-            >
-              <div style={styles.dayName}>{day.dayName}</div>
-              <div style={styles.dayNum}>{day.dayNum}</div>
-              <div style={styles.dayMonth}>{day.month}</div>
-            </button>
-          ))}
-        </div>
-
-        {selectedDay && (
-          <>
-            <p style={styles.slotsLabel}>
-              Créneaux disponibles pour le {selectedDay.dayName.toLowerCase()} {selectedDay.dayNum} {selectedDay.month.toLowerCase()}
-            </p>
-            <div style={styles.slotsGrid}>
-              {timeSlots.map((time) => {
-                const isAvailable = availableSlots.includes(time);
-                const isSelected = selectedTime === time;
-                return (
-                  <button
-                    key={time}
-                    onClick={() => {
-                      if (isAvailable) {
-                        setSelectedTime(time);
-                        setStep(3);
-                      }
-                    }}
-                    style={{
-                      ...styles.slot,
-                      ...(isSelected ? styles.slotSelected : {}),
-                      ...(!isAvailable ? styles.slotUnavailable : {})
-                    }}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '12px',
+              background: colors.primaryLight, display: 'flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: '22px',
+            }}>
+              {selectedService?.icon}
             </div>
-          </>
-        )}
-          <div style={{ height: '40px' }} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{selectedService?.name}</div>
+              <div style={{ fontSize: '13px', color: colors.textSecondary }}>Dr. Laurent GRIMAUD</div>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: colors.text, marginBottom: '8px', letterSpacing: '-0.5px' }}>
+            Choisissez une date
+          </h1>
+          <p style={{ color: colors.textSecondary, marginBottom: '32px' }}>{getWeekLabel()}</p>
+
+          {/* Week Navigation */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <button onClick={() => { const p = new Date(weekStart); p.setDate(p.getDate() - 7); setWeekStart(p); }} style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: 'none', border: 'none', color: colors.textSecondary, cursor: 'pointer', fontSize: '14px',
+            }}>
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Précédent
+            </button>
+            <button onClick={() => { const n = new Date(weekStart); n.setDate(n.getDate() + 7); setWeekStart(n); }} style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: 'none', border: 'none', color: colors.textSecondary, cursor: 'pointer', fontSize: '14px',
+            }}>
+              Suivant
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Days */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '32px' }}>
+            {days.map((day) => {
+              const isSelected = selectedDay?.date.toDateString() === day.date.toDateString();
+              return (
+                <button key={day.date.toISOString()} onClick={() => setSelectedDay(day)} style={{
+                  padding: '16px 8px', textAlign: 'center', cursor: 'pointer',
+                  background: isSelected ? colors.primary : colors.card,
+                  border: `2px solid ${isSelected ? colors.primary : colors.border}`,
+                  borderRadius: '16px', transition: 'all 0.2s',
+                }}>
+                  <div style={{ fontSize: '12px', color: isSelected ? 'rgba(255,255,255,0.8)' : colors.textSecondary, marginBottom: '4px' }}>
+                    {day.dayName}
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: isSelected ? '#fff' : colors.text }}>
+                    {day.dayNum}
+                  </div>
+                  <div style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.7)' : colors.textMuted }}>
+                    {day.month}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Time Slots */}
+          {selectedDay && (
+            <>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: colors.text, marginBottom: '16px' }}>
+                Horaires disponibles
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
+                {timeSlots.map((time) => {
+                  const isAvailable = availableSlots.includes(time);
+                  return (
+                    <button key={time} onClick={() => isAvailable && (setSelectedTime(time), setStep(3))} disabled={!isAvailable} style={{
+                      padding: '14px 8px', textAlign: 'center', fontSize: '14px', fontWeight: 600,
+                      background: isAvailable ? colors.card : colors.borderLight,
+                      color: isAvailable ? colors.primary : colors.textMuted,
+                      border: `1.5px solid ${isAvailable ? colors.primary : 'transparent'}`,
+                      borderRadius: '12px', cursor: isAvailable ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.15s',
+                    }}>
+                      {time}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-      </>
+      </div>
     );
   }
 
   // PAGE 3: Patient Form
   if (step === 3) {
     return (
-      <>
+      <div style={{ minHeight: '100vh', background: colors.background }}>
         <Navbar />
-        <div style={styles.container}>
-          <button style={styles.backBtn} onClick={() => setStep(2)}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Retour
-        </button>
+        <div style={{ maxWidth: '500px', margin: '0 auto', padding: '32px 24px' }}>
+          <button onClick={() => setStep(2)} style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'none', border: 'none', color: colors.textSecondary,
+            fontSize: '14px', cursor: 'pointer', marginBottom: '32px', padding: 0,
+          }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour
+          </button>
 
-        <div style={styles.formContainer}>
-          <div style={styles.centerContent}>
-            <div style={styles.iconCircle}>
-              <svg width="28" height="28" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+          {/* Appointment Summary */}
+          <div style={{
+            padding: '20px', background: colors.primaryLight, borderRadius: '16px', marginBottom: '32px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{
+                width: '52px', height: '52px', borderRadius: '14px', background: colors.card,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px',
+              }}>
+                {selectedService?.icon}
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, color: colors.text, marginBottom: '4px' }}>{selectedService?.name}</div>
+                <div style={{ fontSize: '14px', color: colors.primary, fontWeight: 500 }}>
+                  {selectedDay && selectedTime && formatDate(selectedDay.date, selectedTime)}
+                </div>
+              </div>
             </div>
-            <h1 style={styles.pageTitle}>Vos informations</h1>
-            <p style={styles.subtitle}>
-              {selectedService?.name} • {selectedDay && selectedTime && formatDate(selectedDay.date, selectedTime)}
-            </p>
           </div>
 
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>Vos coordonnées</h1>
+          <p style={{ color: colors.textSecondary, marginBottom: '32px' }}>Renseignez vos informations pour confirmer</p>
+
           <form onSubmit={handleSubmit}>
-            <div style={styles.formGrid}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={styles.formLabel}>Prénom *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Votre prénom"
-                  style={styles.formInput}
-                  value={patient.firstName}
-                  onChange={(e) => setPatient({ ...patient, firstName: e.target.value })}
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Prénom</label>
+                <input type="text" required placeholder="Jean" value={patient.firstName} onChange={(e) => setPatient({ ...patient, firstName: e.target.value })}
+                  style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none', transition: 'border 0.2s' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                  onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
                 />
               </div>
               <div>
-                <label style={styles.formLabel}>Nom *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Votre nom"
-                  style={styles.formInput}
-                  value={patient.lastName}
-                  onChange={(e) => setPatient({ ...patient, lastName: e.target.value })}
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Nom</label>
+                <input type="text" required placeholder="Dupont" value={patient.lastName} onChange={(e) => setPatient({ ...patient, lastName: e.target.value })}
+                  style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none' }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                  onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
                 />
               </div>
             </div>
 
-            <div style={styles.formField}>
-              <label style={styles.formLabel}>Email *</label>
-              <input
-                type="email"
-                required
-                placeholder="votre.email@exemple.fr"
-                style={styles.formInput}
-                value={patient.email}
-                onChange={(e) => setPatient({ ...patient, email: e.target.value })}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Email</label>
+              <input type="email" required placeholder="jean.dupont@email.com" value={patient.email} onChange={(e) => setPatient({ ...patient, email: e.target.value })}
+                style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none' }}
+                onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
               />
             </div>
 
-            <div style={styles.formField}>
-              <label style={styles.formLabel}>Téléphone *</label>
-              <input
-                type="tel"
-                required
-                placeholder="06 12 34 56 78"
-                style={styles.formInput}
-                value={patient.phone}
-                onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Téléphone</label>
+              <input type="tel" required placeholder="06 12 34 56 78" value={patient.phone} onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
+                style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none' }}
+                onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
               />
             </div>
 
-            <div style={styles.formField}>
-              <label style={styles.formLabel}>Date de naissance *</label>
-              <input
-                type="date"
-                required
-                style={styles.formInput}
-                value={patient.birthDate}
-                onChange={(e) => setPatient({ ...patient, birthDate: e.target.value })}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Date de naissance</label>
+              <input type="date" required value={patient.birthDate} onChange={(e) => setPatient({ ...patient, birthDate: e.target.value })}
+                style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none' }}
+                onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
               />
             </div>
 
-            <div style={styles.formField}>
-              <label style={styles.formLabel}>Motif de consultation (optionnel)</label>
-              <textarea
-                placeholder="Décrivez brièvement le motif de votre consultation..."
-                style={styles.formTextarea}
-                value={patient.notes}
-                onChange={(e) => setPatient({ ...patient, notes: e.target.value })}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>Motif (optionnel)</label>
+              <textarea placeholder="Décrivez brièvement le motif de consultation..." value={patient.notes} onChange={(e) => setPatient({ ...patient, notes: e.target.value })}
+                style={{ width: '100%', padding: '14px 16px', background: colors.card, border: `1.5px solid ${colors.border}`, borderRadius: '12px', fontSize: '16px', outline: 'none', resize: 'none', minHeight: '100px' }}
+                onFocus={(e) => e.currentTarget.style.borderColor = colors.primary}
+                onBlur={(e) => e.currentTarget.style.borderColor = colors.border}
               />
             </div>
 
-            <div style={styles.noteBox}>
-              <strong>Note:</strong> Vos données personnelles sont traitées de manière confidentielle et conformément au RGPD.
+            <div style={{ padding: '16px', background: colors.borderLight, borderRadius: '12px', marginBottom: '24px' }}>
+              <p style={{ fontSize: '13px', color: colors.textSecondary, lineHeight: 1.6 }}>
+                <strong style={{ color: colors.text }}>Confidentialité :</strong> Vos données sont traitées conformément au RGPD et ne seront jamais partagées.
+              </p>
             </div>
 
-            <button type="submit" style={styles.submitBtn}>
+            <button type="submit" style={{
+              width: '100%', padding: '18px', background: colors.primary, color: '#fff',
+              border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}>
               Confirmer le rendez-vous
             </button>
           </form>
         </div>
-          <div style={{ height: '40px' }} />
-        </div>
-      </>
+      </div>
     );
   }
 
   // PAGE 4: Confirmation
   return (
-    <>
+    <div style={{ minHeight: '100vh', background: colors.background }}>
       <Navbar />
-      <div style={styles.container}>
-        <div style={{ ...styles.formContainer, paddingTop: '40px' }}>
-        <div style={styles.centerContent}>
-          <div style={styles.successIcon}>
-            <svg width="40" height="40" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 style={styles.pageTitle}>Rendez-vous confirmé !</h1>
-          <p style={styles.subtitle}>Un email de confirmation a été envoyé à {patient.email}</p>
+      <div style={{ maxWidth: '500px', margin: '0 auto', padding: '48px 24px', textAlign: 'center' }}>
+        {/* Success Animation */}
+        <div style={{
+          width: '88px', height: '88px', borderRadius: '50%',
+          background: colors.successLight, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 24px',
+        }}>
+          <svg width="44" height="44" fill="none" stroke={colors.success} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
         </div>
 
-        <div style={styles.summaryBox}>
-          <div style={styles.summaryItem}>
-            <div style={styles.summaryIcon}>
-              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <div>
-              <div style={styles.summaryLabel}>Service</div>
-              <div style={styles.summaryValue}>{selectedService?.name}</div>
-            </div>
-          </div>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: colors.text, marginBottom: '8px' }}>Rendez-vous confirmé !</h1>
+        <p style={{ color: colors.textSecondary, marginBottom: '32px' }}>
+          Un email de confirmation a été envoyé à<br /><strong style={{ color: colors.text }}>{patient.email}</strong>
+        </p>
 
-          <div style={styles.summaryItem}>
-            <div style={styles.summaryIcon}>
-              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+        {/* Summary Card */}
+        <div style={{ background: colors.card, borderRadius: '20px', padding: '24px', textAlign: 'left', border: `1px solid ${colors.border}`, marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '20px', borderBottom: `1px solid ${colors.borderLight}` }}>
+            <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: colors.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+              {selectedService?.icon}
             </div>
             <div>
-              <div style={styles.summaryLabel}>Date et heure</div>
-              <div style={styles.summaryValue}>
+              <div style={{ fontWeight: 600, color: colors.text, marginBottom: '4px' }}>{selectedService?.name}</div>
+              <div style={{ fontSize: '14px', color: colors.primary, fontWeight: 500 }}>
                 {selectedDay && selectedTime && formatDate(selectedDay.date, selectedTime)}
               </div>
             </div>
           </div>
 
-          <div style={styles.summaryItem}>
-            <div style={styles.summaryIcon}>
-              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+          <div style={{ paddingTop: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: colors.borderLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" fill="none" stroke={colors.textSecondary} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '2px' }}>Adresse</div>
+                <div style={{ fontWeight: 500, color: colors.text, fontSize: '14px' }}>Centre Médical Pont de l&apos;Arc</div>
+                <div style={{ fontSize: '13px', color: colors.textSecondary }}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</div>
+              </div>
             </div>
-            <div>
-              <div style={styles.summaryLabel}>Lieu</div>
-              <div style={styles.summaryValue}>Centre Médical Pont de l&apos;Arc</div>
-              <div style={{ fontSize: '13px', color: '#6b7280' }}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</div>
-            </div>
-          </div>
 
-          <div style={{ ...styles.summaryItem, marginBottom: 0 }}>
-            <div style={styles.summaryIcon}>
-              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <div style={styles.summaryLabel}>Patient</div>
-              <div style={styles.summaryValue}>{patient.firstName} {patient.lastName}</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: colors.borderLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" fill="none" stroke={colors.textSecondary} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: '13px', color: colors.textMuted, marginBottom: '2px' }}>Patient</div>
+                <div style={{ fontWeight: 500, color: colors.text, fontSize: '14px' }}>{patient.firstName} {patient.lastName}</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div style={{ ...styles.infoBox, ...styles.warningBox, marginTop: 0 }}>
-          <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '8px' }}>Informations importantes</div>
-          <ul style={{ color: '#92400e', paddingLeft: '16px', margin: 0 }}>
-            <li>Merci de vous munir de votre carte vitale et mutuelle</li>
-            <li>En cas d&apos;empêchement, veuillez annuler au moins 24h à l&apos;avance</li>
-            <li>Moyens de paiement: virement bancaire, chèques, espèces</li>
+        {/* Info Card */}
+        <div style={{ background: colors.warningLight, borderRadius: '16px', padding: '20px', textAlign: 'left', marginBottom: '24px' }}>
+          <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '12px', fontSize: '14px' }}>Rappels importants</div>
+          <ul style={{ color: '#78350f', fontSize: '13px', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
+            <li>Apportez votre carte vitale et mutuelle</li>
+            <li>Annulez 24h à l&apos;avance si empêché</li>
+            <li>CB, chèques et espèces acceptés</li>
           </ul>
         </div>
 
-        <div style={{
-          ...styles.infoBox,
-          background: '#fee2e2',
-          borderLeft: '4px solid #ef4444',
-          marginBottom: '24px'
-        }}>
-          <span style={{ color: '#991b1b' }}>
-            <strong>Urgence:</strong> En cas d&apos;urgence, appelez le <strong>15</strong> ou le <strong>04 86 31 94 11</strong>
-          </span>
-        </div>
-
-          <button
-            style={styles.submitBtn}
-            onClick={() => {
-              setStep(1);
-              setSelectedService(null);
-              setSelectedDay(null);
-              setSelectedTime(null);
-              setPatient({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' });
-            }}
-          >
-            Prendre un autre rendez-vous
-          </button>
-        </div>
-        <div style={{ height: '40px' }} />
+        <button onClick={() => { setStep(1); setSelectedService(null); setSelectedDay(null); setSelectedTime(null); setPatient({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' }); }}
+          style={{
+            width: '100%', padding: '18px', background: colors.primary, color: '#fff',
+            border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: 600, cursor: 'pointer',
+          }}>
+          Prendre un autre rendez-vous
+        </button>
       </div>
-    </>
+    </div>
   );
 }
