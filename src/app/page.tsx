@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 // Types
 interface Service {
@@ -119,64 +120,66 @@ export default function Home() {
       padding: '0 20px',
     } as React.CSSProperties,
 
-    // Header Card
-    headerCard: {
+    // Top Navigation Bar
+    navbar: {
       background: '#fff',
-      borderRadius: '16px',
-      border: '1px solid #e5e7eb',
-      padding: '20px',
-      marginTop: '20px',
-      marginBottom: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      borderBottom: '1px solid #e5e7eb',
+      padding: '12px 0',
+      position: 'sticky' as const,
+      top: 0,
+      zIndex: 100,
     } as React.CSSProperties,
 
-    headerInner: {
+    navbarInner: {
+      maxWidth: '800px',
+      margin: '0 auto',
+      padding: '0 20px',
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       gap: '16px',
-      flexWrap: 'wrap' as const,
     } as React.CSSProperties,
 
-    logo: {
-      width: '56px',
-      height: '56px',
-      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-      borderRadius: '12px',
+    navLeft: {
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      color: '#fff',
-      fontSize: '7px',
-      fontWeight: 700,
-      textAlign: 'center' as const,
-      lineHeight: 1.2,
-      flexShrink: 0,
+      gap: '12px',
     } as React.CSSProperties,
 
-    headerLeft: {
-      display: 'flex',
-      gap: '14px',
-      alignItems: 'center',
+    navLogo: {
+      height: '44px',
+      width: 'auto',
     } as React.CSSProperties,
 
-    headerTitle: {
-      fontSize: '15px',
+    navTitle: {
+      fontSize: '14px',
       fontWeight: 600,
-      color: '#111827',
-      marginBottom: '2px',
+      color: '#1e3a5f',
     } as React.CSSProperties,
 
-    headerSubtitle: {
+    navRight: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '20px',
+    } as React.CSSProperties,
+
+    navContact: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
       fontSize: '13px',
-      color: '#6b7280',
+      color: '#4b5563',
+      textDecoration: 'none',
     } as React.CSSProperties,
 
-    headerRight: {
-      textAlign: 'right' as const,
-      fontSize: '12px',
-      color: '#6b7280',
-      lineHeight: 1.6,
+    navPhone: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '13px',
+      fontWeight: 500,
+      color: '#3b82f6',
+      textDecoration: 'none',
     } as React.CSSProperties,
 
     // Services
@@ -541,31 +544,46 @@ export default function Home() {
     } as React.CSSProperties,
   };
 
+  // Navbar Component
+  const Navbar = () => (
+    <nav style={styles.navbar}>
+      <div style={styles.navbarInner}>
+        <div style={styles.navLeft}>
+          <Image
+            src="/logo.png"
+            alt="Centre Médical Pont de l'Arc"
+            width={100}
+            height={44}
+            style={{ height: '44px', width: 'auto' }}
+          />
+          <span style={styles.navTitle}>Centre Médical Pont de l&apos;Arc</span>
+        </div>
+        <div style={styles.navRight}>
+          <a href="mailto:aixecho462@gmail.com" style={styles.navContact}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Contact
+          </a>
+          <a href="tel:0486319411" style={styles.navPhone}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            04 86 31 94 11
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+
   // PAGE 1: Services
   if (step === 1) {
     return (
-      <div style={styles.container}>
-        {/* Header Card */}
-        <div style={styles.headerCard}>
-          <div style={styles.headerInner}>
-            <div style={styles.headerLeft}>
-              <div style={styles.logo}>CENTRE<br/>MÉDICAL<br/>PONT DE L&apos;ARC</div>
-              <div>
-                <div style={styles.headerTitle}>Centre Médical Pont de l&apos;Arc</div>
-                <div style={styles.headerSubtitle}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</div>
-              </div>
-            </div>
-            <div style={styles.headerRight}>
-              <div>4 rue Frédéric Rosa</div>
-              <div>13090 Aix-en-Provence</div>
-              <div style={{ color: '#3b82f6' }}>04 86 31 94 11</div>
-              <div style={{ color: '#3b82f6' }}>aixecho462@gmail.com</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Services */}
-        <h1 style={styles.title}>Prendre rendez-vous pour</h1>
+      <>
+        <Navbar />
+        <div style={styles.container}>
+          {/* Services */}
+          <h1 style={styles.title}>Prendre rendez-vous pour</h1>
 
         <div style={styles.servicesList}>
           {services.map((service) => (
@@ -637,15 +655,18 @@ export default function Home() {
           <a href="#" style={{ color: '#3b82f6' }}>www.ameli.direct.amelie.fr</a>
           <div style={{ color: '#9ca3af', marginTop: '4px' }}>Démarche RSE et RGPD</div>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
   // PAGE 2: Date & Time
   if (step === 2) {
     return (
-      <div style={styles.container}>
-        <button style={styles.backBtn} onClick={() => setStep(1)}>
+      <>
+        <Navbar />
+        <div style={styles.container}>
+          <button style={styles.backBtn} onClick={() => setStep(1)}>
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -734,16 +755,19 @@ export default function Home() {
             </div>
           </>
         )}
-        <div style={{ height: '40px' }} />
-      </div>
+          <div style={{ height: '40px' }} />
+        </div>
+      </>
     );
   }
 
   // PAGE 3: Patient Form
   if (step === 3) {
     return (
-      <div style={styles.container}>
-        <button style={styles.backBtn} onClick={() => setStep(2)}>
+      <>
+        <Navbar />
+        <div style={styles.container}>
+          <button style={styles.backBtn} onClick={() => setStep(2)}>
           <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -843,15 +867,18 @@ export default function Home() {
             </button>
           </form>
         </div>
-        <div style={{ height: '40px' }} />
-      </div>
+          <div style={{ height: '40px' }} />
+        </div>
+      </>
     );
   }
 
   // PAGE 4: Confirmation
   return (
-    <div style={styles.container}>
-      <div style={{ ...styles.formContainer, paddingTop: '40px' }}>
+    <>
+      <Navbar />
+      <div style={styles.container}>
+        <div style={{ ...styles.formContainer, paddingTop: '40px' }}>
         <div style={styles.centerContent}>
           <div style={styles.successIcon}>
             <svg width="40" height="40" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
@@ -936,20 +963,21 @@ export default function Home() {
           </span>
         </div>
 
-        <button
-          style={styles.submitBtn}
-          onClick={() => {
-            setStep(1);
-            setSelectedService(null);
-            setSelectedDay(null);
-            setSelectedTime(null);
-            setPatient({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' });
-          }}
-        >
-          Prendre un autre rendez-vous
-        </button>
+          <button
+            style={styles.submitBtn}
+            onClick={() => {
+              setStep(1);
+              setSelectedService(null);
+              setSelectedDay(null);
+              setSelectedTime(null);
+              setPatient({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' });
+            }}
+          >
+            Prendre un autre rendez-vous
+          </button>
+        </div>
+        <div style={{ height: '40px' }} />
       </div>
-      <div style={{ height: '40px' }} />
-    </div>
+    </>
   );
 }
