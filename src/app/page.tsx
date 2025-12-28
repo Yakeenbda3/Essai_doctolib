@@ -167,9 +167,9 @@ export default function Home() {
     } as React.CSSProperties,
 
     servicesList: {
-      border: '1px solid #e5e7eb',
-      borderRadius: '12px',
-      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '12px',
     } as React.CSSProperties,
 
     serviceItem: {
@@ -177,8 +177,11 @@ export default function Home() {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '16px',
-      borderBottom: '1px solid #e5e7eb',
+      background: '#fff',
+      borderRadius: '12px',
+      border: '1px solid #e5e7eb',
       gap: '12px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     } as React.CSSProperties,
 
     serviceInfo: {
@@ -543,14 +546,8 @@ export default function Home() {
         <h1 style={styles.title}>Prendre rendez-vous pour</h1>
 
         <div style={styles.servicesList}>
-          {services.map((service, index) => (
-            <div
-              key={service.id}
-              style={{
-                ...styles.serviceItem,
-                borderBottom: index === services.length - 1 ? 'none' : '1px solid #e5e7eb'
-              }}
-            >
+          {services.map((service) => (
+            <div key={service.id} style={styles.serviceItem}>
               <div style={styles.serviceInfo}>
                 <div style={styles.serviceImage} />
                 <div style={styles.serviceText}>
