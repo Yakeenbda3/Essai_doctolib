@@ -1,487 +1,936 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { services, doctorInfo, generateWeekSchedule } from '@/lib/data';
-import { BookingData, BookingStep, Service, PatientInfo, DaySchedule } from '@/types';
+
+// Types
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface DayData {
+  date: Date;
+  dayName: string;
+  dayNum: number;
+  month: string;
+}
+
+interface PatientData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  notes: string;
+}
+
+// Data
+const services: Service[] = [
+  { id: '1', name: 'Consultation', description: 'Adulte(s) connu(s)' },
+  { id: '2', name: 'Nouveau patient', description: '' },
+  { id: '3', name: 'Échographie', description: 'Rein - Vésicule - Grossesse - Musculo-squelettique' },
+  { id: '4', name: 'Dépistage Covid Antigénique PCR', description: 'PCR, Sein, Utérus, Prostate, Mélanome, Poumons' },
+  { id: '5', name: 'Grossesse', description: 'Suivi obstétrical et échographie' },
+  { id: '6', name: 'Gynécologie médicale', description: 'Troubles du cycle, Contraception, DIU, Ménopause' },
+  { id: '7', name: 'Télémédecine dont COVID-19', description: 'Consultation à distance' },
+  { id: '8', name: 'Aptitude sportive', description: 'Certificat médical - Électrocardiogramme' },
+  { id: '9', name: 'Suture', description: 'Anesthésie locale' },
+  { id: '10', name: 'Allaitement/pédiatrie', description: '' },
+  { id: '11', name: 'Conseils aux voyageurs / Travel advice', description: 'Prévention - Country risk assessment' },
+  { id: '12', name: 'Pressothérapie', description: '' },
+  { id: '13', name: 'Rendez-vous professionnel', description: '' },
+];
+
+const timeSlots = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00'
+];
 
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState<BookingStep>('services');
-  const [booking, setBooking] = useState<BookingData>({
-    service: null,
-    date: null,
-    time: null,
-    patientInfo: null,
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [weekStart, setWeekStart] = useState(new Date());
+  const [days, setDays] = useState<DayData[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [patient, setPatient] = useState<PatientData>({
+    firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: ''
   });
 
-  // Date/time picker state
-  const [weekStart, setWeekStart] = useState(() => new Date());
-  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
-  const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
-
+  // Generate week days
   useEffect(() => {
-    const newSchedule = generateWeekSchedule(weekStart);
-    setSchedule(newSchedule);
-    // Auto-select first day with available slots
-    const firstAvailable = newSchedule.find(day => day.slots.some(s => s.available));
-    if (firstAvailable && !selectedDay) {
-      setSelectedDay(firstAvailable);
+    const dayNames = ['Dim.', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Sam.'];
+    const monthNames = ['Janv.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+
+    const monday = new Date(weekStart);
+    const dow = monday.getDay();
+    monday.setDate(monday.getDate() - (dow === 0 ? 6 : dow - 1));
+
+    const newDays: DayData[] = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      newDays.push({
+        date: d,
+        dayName: dayNames[d.getDay()],
+        dayNum: d.getDate(),
+        month: monthNames[d.getMonth()]
+      });
+    }
+    setDays(newDays);
+    if (!selectedDay && newDays.length > 0) {
+      setSelectedDay(newDays[2]); // Select Wednesday by default
     }
   }, [weekStart]);
 
-  // Form state
-  const [formData, setFormData] = useState<PatientInfo>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    birthDate: '',
-    notes: '',
-  });
-
-  const handleServiceSelect = (service: Service) => {
-    setBooking((prev) => ({ ...prev, service }));
-    setCurrentStep('datetime');
-  };
-
-  const handleTimeSelect = (time: string) => {
+  // Generate random available slots when day changes
+  useEffect(() => {
     if (selectedDay) {
-      setBooking((prev) => ({ ...prev, date: selectedDay.date, time }));
-      setCurrentStep('info');
+      const available = timeSlots.filter(() => Math.random() > 0.4);
+      setAvailableSlots(available);
     }
-  };
-
-  const handleDaySelect = (day: DaySchedule) => {
-    setSelectedDay(day);
-    setBooking((prev) => ({ ...prev, date: day.date, time: null }));
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setBooking((prev) => ({ ...prev, patientInfo: formData }));
-    setCurrentStep('confirmation');
-  };
-
-  const handleNewBooking = () => {
-    setBooking({ service: null, date: null, time: null, patientInfo: null });
-    setFormData({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' });
-    setCurrentStep('services');
-  };
-
-  const goBack = () => {
-    if (currentStep === 'datetime') setCurrentStep('services');
-    else if (currentStep === 'info') setCurrentStep('datetime');
-  };
-
-  const goToNextWeek = () => {
-    const next = new Date(weekStart);
-    next.setDate(next.getDate() + 7);
-    setWeekStart(next);
-    setSelectedDay(null);
-  };
-
-  const goToPrevWeek = () => {
-    const prev = new Date(weekStart);
-    prev.setDate(prev.getDate() - 7);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (prev >= today) {
-      setWeekStart(prev);
-      setSelectedDay(null);
-    }
-  };
+  }, [selectedDay?.date.toISOString()]);
 
   const getWeekLabel = () => {
-    if (schedule.length === 0) return '';
-    const firstDay = schedule[0];
-    const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-    return `Semaine du ${firstDay.dayNumber} ${monthNames[firstDay.date.getMonth()]}`;
+    if (days.length === 0) return '';
+    const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    return `Semaine du ${days[0].dayNum} ${months[days[0].date.getMonth()]}`;
   };
 
-  const formatFullDate = (date: Date, time: string) => {
+  const formatDate = (date: Date, time: string) => {
     const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
     const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
     return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} à ${time}`;
   };
 
-  return (
-    <div className="min-h-screen bg-white">
-      {/* PAGE 1: SERVICE SELECTION */}
-      {currentStep === 'services' && (
-        <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <header className="flex items-start justify-between p-6 border-b border-gray-100">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm leading-tight text-center">
-                  CENTRE<br/>MÉDICAL<br/>PONT DE L&apos;ARC
-                </span>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Centre Médical Office de l&apos;Arc - 4 Rue Frédéric R ROSA, 13090 Aix-en-Provence</p>
-              </div>
-            </div>
-            <div className="text-right text-xs text-gray-500">
-              <p>4 rue Frédéric Rosa</p>
-              <p>13090 Aix-en-Provence</p>
-              <p className="text-blue-600">{doctorInfo.phone}</p>
-              <p className="text-blue-600">{doctorInfo.email}</p>
-            </div>
-          </header>
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(4);
+  };
 
-          {/* Services List */}
-          <div className="p-6">
-            <h1 className="text-xl font-semibold text-gray-900 mb-6">Prendre rendez-vous pour</h1>
+  // Styles
+  const styles = {
+    container: {
+      maxWidth: '800px',
+      margin: '0 auto',
+      padding: '0 20px',
+    } as React.CSSProperties,
 
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              {services.map((service) => (
-                <div key={service.id} className="service-card">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                      <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-medium text-gray-900">{service.name}</h3>
-                      {service.description && (
-                        <p className="text-sm text-gray-500 truncate">{service.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleServiceSelect(service)}
-                    className="btn-choose"
-                  >
-                    Choisir
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+    // Header
+    header: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      padding: '20px 0',
+      borderBottom: '1px solid #e5e7eb',
+      gap: '20px',
+      flexWrap: 'wrap' as const,
+    } as React.CSSProperties,
 
-          {/* Info Boxes */}
-          <div className="px-6 pb-6 space-y-4">
-            {/* Emergency Info */}
-            <div className="info-box warning">
-              <p className="font-semibold text-amber-800">Informations Urgence / Emergency</p>
-              <p className="text-amber-700 text-sm mt-1">
-                <strong>Important:</strong> en cas d&apos;urgence veuillez téléphoner directement au <strong>15</strong>.
-              </p>
-              <p className="text-amber-700 text-sm">
-                <strong>Important:</strong> in case of emergency please call directly at <strong>{doctorInfo.phone}</strong>. If no let <strong>15</strong>
-              </p>
-            </div>
+    logo: {
+      width: '60px',
+      height: '60px',
+      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#fff',
+      fontSize: '8px',
+      fontWeight: 700,
+      textAlign: 'center' as const,
+      lineHeight: 1.2,
+      flexShrink: 0,
+    } as React.CSSProperties,
 
-            {/* Badges */}
-            <div className="flex flex-wrap gap-3">
-              <span className="badge badge-primary">MÉDECINE GÉNÉRALE ET SPÉCIALISÉE URGENCES</span>
-              <span className="badge badge-outline">CONVENTIONNÉ SECTEUR 2 AVEC L&apos;ASSURANCE MALADIE</span>
-            </div>
+    headerLeft: {
+      display: 'flex',
+      gap: '12px',
+      alignItems: 'flex-start',
+    } as React.CSSProperties,
 
-            <p className="text-sm text-gray-600">{doctorInfo.credentials}</p>
+    headerRight: {
+      textAlign: 'right' as const,
+      fontSize: '12px',
+      color: '#6b7280',
+    } as React.CSSProperties,
 
-            {/* Note Box */}
-            <div className="info-box note">
-              <p className="font-semibold text-gray-700">À noter</p>
-              <p className="text-gray-600 text-sm mt-1">
-                Un médecin collaborateur adjoint ou un remplaçant peut <span className="text-blue-600">vous recevoir en l&apos;absence du Dr GRIMAUD</span> dans ce cas vous serez informés avant.
-              </p>
-            </div>
+    // Services
+    title: {
+      fontSize: '20px',
+      fontWeight: 600,
+      margin: '24px 0 16px',
+      color: '#111827',
+    } as React.CSSProperties,
 
-            {/* Telemedicine Box */}
-            <div className="info-box info">
-              <p className="font-semibold text-blue-800">RDV Télémédecine</p>
-              <p className="text-blue-700 text-sm mt-1">
-                Merci de penser a vous munir de votre <strong>carte vitale et mutuelle</strong> ou à défaut de vos attestations de droit.
-              </p>
-              <p className="text-blue-700 text-sm">
-                Pour les bénéficiaires de la CMU aussi.
-              </p>
-              <p className="text-blue-700 text-sm">
-                <strong>Moyens de paiement:</strong> virement bancaire, chèques, espèces.
-              </p>
-            </div>
+    servicesList: {
+      border: '1px solid #e5e7eb',
+      borderRadius: '12px',
+      overflow: 'hidden',
+    } as React.CSSProperties,
 
-            {/* Links */}
-            <div className="text-sm">
-              <a href="#" className="text-blue-600 hover:underline">www.ameli.direct.amelie.fr</a>
-              <p className="text-gray-500 mt-1">Démarche RSE et RGPD</p>
-            </div>
-          </div>
-        </div>
-      )}
+    serviceItem: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '16px',
+      borderBottom: '1px solid #e5e7eb',
+      gap: '12px',
+    } as React.CSSProperties,
 
-      {/* PAGE 2: DATE & TIME SELECTION */}
-      {currentStep === 'datetime' && (
-        <div className="max-w-3xl mx-auto p-6">
-          {/* Back Button */}
-          <button onClick={goBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Retour
-          </button>
+    serviceInfo: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      flex: 1,
+      minWidth: 0,
+    } as React.CSSProperties,
 
-          {/* Icon & Title */}
-          <div className="text-center mb-8">
-            <div className="icon-circle mx-auto mb-4">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Choisissez votre créneau</h1>
-            <p className="text-gray-500">Service sélectionné: <strong>{booking.service?.name}</strong></p>
-          </div>
+    serviceImage: {
+      width: '44px',
+      height: '44px',
+      borderRadius: '8px',
+      background: '#e5e7eb',
+      flexShrink: 0,
+    } as React.CSSProperties,
 
-          {/* Week Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <button onClick={goToPrevWeek} className="flex items-center gap-1 text-gray-500 hover:text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Semaine précédente
-            </button>
-            <span className="font-medium text-gray-900">{getWeekLabel()}</span>
-            <button onClick={goToNextWeek} className="flex items-center gap-1 text-gray-500 hover:text-gray-700">
-              Semaine suivante
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
+    serviceText: {
+      minWidth: 0,
+    } as React.CSSProperties,
 
-          {/* Day Selector */}
-          <div className="grid grid-cols-5 gap-2 mb-8">
-            {schedule.map((day) => (
-              <button
-                key={day.date.toISOString()}
-                onClick={() => handleDaySelect(day)}
-                className={`day-card ${selectedDay?.date.toISOString() === day.date.toISOString() ? 'selected' : ''}`}
-              >
-                <p className="text-sm text-gray-500">{day.dayName}</p>
-                <p className="text-2xl font-semibold text-gray-900 my-1">{day.dayNumber}</p>
-                <p className="text-xs text-gray-400">{day.month}</p>
-              </button>
-            ))}
-          </div>
+    serviceName: {
+      fontWeight: 500,
+      color: '#111827',
+      fontSize: '15px',
+    } as React.CSSProperties,
 
-          {/* Time Slots */}
-          {selectedDay && (
+    serviceDesc: {
+      fontSize: '13px',
+      color: '#6b7280',
+      whiteSpace: 'nowrap' as const,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    } as React.CSSProperties,
+
+    chooseBtn: {
+      background: '#3b82f6',
+      color: '#fff',
+      border: 'none',
+      padding: '8px 20px',
+      borderRadius: '20px',
+      fontSize: '14px',
+      fontWeight: 500,
+      flexShrink: 0,
+    } as React.CSSProperties,
+
+    // Info boxes
+    infoBox: {
+      padding: '16px',
+      borderRadius: '8px',
+      marginTop: '16px',
+      fontSize: '14px',
+    } as React.CSSProperties,
+
+    warningBox: {
+      background: '#fef3c7',
+      borderLeft: '4px solid #f59e0b',
+    } as React.CSSProperties,
+
+    infoBoxBlue: {
+      background: '#dbeafe',
+      borderLeft: '4px solid #3b82f6',
+    } as React.CSSProperties,
+
+    grayBox: {
+      background: '#f3f4f6',
+    } as React.CSSProperties,
+
+    badge: {
+      display: 'inline-block',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: 500,
+      marginRight: '8px',
+      marginTop: '16px',
+    } as React.CSSProperties,
+
+    badgePrimary: {
+      background: '#3b82f6',
+      color: '#fff',
+    } as React.CSSProperties,
+
+    badgeOutline: {
+      background: '#fff',
+      border: '1px solid #d1d5db',
+      color: '#4b5563',
+    } as React.CSSProperties,
+
+    // Page 2 - Date picker
+    backBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      background: 'none',
+      border: 'none',
+      color: '#6b7280',
+      fontSize: '15px',
+      padding: '20px 0',
+    } as React.CSSProperties,
+
+    centerContent: {
+      textAlign: 'center' as const,
+    } as React.CSSProperties,
+
+    iconCircle: {
+      width: '64px',
+      height: '64px',
+      background: '#dbeafe',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 16px',
+    } as React.CSSProperties,
+
+    pageTitle: {
+      fontSize: '28px',
+      fontWeight: 700,
+      color: '#111827',
+      marginBottom: '8px',
+    } as React.CSSProperties,
+
+    subtitle: {
+      color: '#6b7280',
+      marginBottom: '32px',
+    } as React.CSSProperties,
+
+    weekNav: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '24px',
+    } as React.CSSProperties,
+
+    navBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      background: 'none',
+      border: 'none',
+      color: '#6b7280',
+      fontSize: '14px',
+    } as React.CSSProperties,
+
+    daysGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(5, 1fr)',
+      gap: '8px',
+      marginBottom: '32px',
+    } as React.CSSProperties,
+
+    dayCard: {
+      padding: '16px 8px',
+      textAlign: 'center' as const,
+      borderRadius: '12px',
+      border: '2px solid transparent',
+      background: '#fff',
+      cursor: 'pointer',
+    } as React.CSSProperties,
+
+    dayCardSelected: {
+      background: '#dbeafe',
+      borderColor: '#3b82f6',
+    } as React.CSSProperties,
+
+    dayName: {
+      fontSize: '13px',
+      color: '#6b7280',
+    } as React.CSSProperties,
+
+    dayNum: {
+      fontSize: '28px',
+      fontWeight: 600,
+      color: '#111827',
+      margin: '4px 0',
+    } as React.CSSProperties,
+
+    dayMonth: {
+      fontSize: '12px',
+      color: '#9ca3af',
+    } as React.CSSProperties,
+
+    slotsLabel: {
+      textAlign: 'center' as const,
+      color: '#6b7280',
+      marginBottom: '16px',
+      fontSize: '15px',
+    } as React.CSSProperties,
+
+    slotsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
+      gap: '8px',
+    } as React.CSSProperties,
+
+    slot: {
+      padding: '10px',
+      textAlign: 'center' as const,
+      borderRadius: '8px',
+      border: '1px solid #e5e7eb',
+      background: '#fff',
+      fontSize: '14px',
+      fontWeight: 500,
+      color: '#374151',
+      cursor: 'pointer',
+    } as React.CSSProperties,
+
+    slotUnavailable: {
+      background: '#f9fafb',
+      color: '#d1d5db',
+      cursor: 'not-allowed',
+      border: '1px solid transparent',
+    } as React.CSSProperties,
+
+    slotSelected: {
+      background: '#3b82f6',
+      color: '#fff',
+      borderColor: '#3b82f6',
+    } as React.CSSProperties,
+
+    // Page 3 - Form
+    formContainer: {
+      maxWidth: '500px',
+      margin: '0 auto',
+    } as React.CSSProperties,
+
+    formGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '16px',
+    } as React.CSSProperties,
+
+    formField: {
+      marginBottom: '16px',
+    } as React.CSSProperties,
+
+    formLabel: {
+      display: 'block',
+      fontSize: '14px',
+      fontWeight: 500,
+      color: '#374151',
+      marginBottom: '8px',
+    } as React.CSSProperties,
+
+    formInput: {
+      width: '100%',
+      padding: '14px 16px',
+      background: '#f3f4f6',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '16px',
+      color: '#111827',
+      outline: 'none',
+    } as React.CSSProperties,
+
+    formTextarea: {
+      width: '100%',
+      padding: '14px 16px',
+      background: '#f3f4f6',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '16px',
+      color: '#111827',
+      outline: 'none',
+      resize: 'none' as const,
+      minHeight: '100px',
+    } as React.CSSProperties,
+
+    noteBox: {
+      background: '#f3f4f6',
+      padding: '16px',
+      borderRadius: '10px',
+      fontSize: '14px',
+      color: '#374151',
+      marginBottom: '24px',
+    } as React.CSSProperties,
+
+    submitBtn: {
+      width: '100%',
+      padding: '16px',
+      background: '#3b82f6',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '30px',
+      fontSize: '16px',
+      fontWeight: 600,
+    } as React.CSSProperties,
+
+    // Page 4 - Confirmation
+    successIcon: {
+      width: '80px',
+      height: '80px',
+      background: '#dcfce7',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 20px',
+    } as React.CSSProperties,
+
+    summaryBox: {
+      background: '#f9fafb',
+      borderRadius: '12px',
+      padding: '24px',
+      marginBottom: '24px',
+    } as React.CSSProperties,
+
+    summaryItem: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '16px',
+      marginBottom: '20px',
+    } as React.CSSProperties,
+
+    summaryIcon: {
+      width: '40px',
+      height: '40px',
+      background: '#dbeafe',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    } as React.CSSProperties,
+
+    summaryLabel: {
+      fontSize: '13px',
+      color: '#6b7280',
+    } as React.CSSProperties,
+
+    summaryValue: {
+      fontWeight: 500,
+      color: '#111827',
+    } as React.CSSProperties,
+  };
+
+  // PAGE 1: Services
+  if (step === 1) {
+    return (
+      <div style={styles.container}>
+        {/* Header */}
+        <header style={styles.header}>
+          <div style={styles.headerLeft}>
+            <div style={styles.logo}>CENTRE<br/>MÉDICAL<br/>PONT DE L&apos;ARC</div>
             <div>
-              <p className="text-center text-gray-600 mb-4">
-                Créneaux disponibles pour le {selectedDay.dayName.toLowerCase()}. {selectedDay.dayNumber} {selectedDay.month.toLowerCase()}
-              </p>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                {selectedDay.slots.map((slot) => (
-                  <button
-                    key={slot.time}
-                    onClick={() => slot.available && handleTimeSelect(slot.time)}
-                    disabled={!slot.available}
-                    className={`time-slot ${slot.available ? '' : 'unavailable'} ${booking.time === slot.time ? 'selected' : ''}`}
-                  >
-                    {slot.time}
-                  </button>
-                ))}
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                Centre Médical Pont de l&apos;Arc - 4 Rue Frédéric ROSA, 13090 Aix-en-Provence
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+          <div style={styles.headerRight}>
+            <div>4 rue Frédéric Rosa</div>
+            <div>13090 Aix-en-Provence</div>
+            <div style={{ color: '#3b82f6' }}>04 86 31 94 11</div>
+            <div style={{ color: '#3b82f6' }}>aixecho462@gmail.com</div>
+          </div>
+        </header>
 
-      {/* PAGE 3: PATIENT INFORMATION */}
-      {currentStep === 'info' && (
-        <div className="max-w-xl mx-auto p-6">
-          {/* Back Button */}
-          <button onClick={goBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Services */}
+        <h1 style={styles.title}>Prendre rendez-vous pour</h1>
+
+        <div style={styles.servicesList}>
+          {services.map((service, index) => (
+            <div
+              key={service.id}
+              style={{
+                ...styles.serviceItem,
+                borderBottom: index === services.length - 1 ? 'none' : '1px solid #e5e7eb'
+              }}
+            >
+              <div style={styles.serviceInfo}>
+                <div style={styles.serviceImage} />
+                <div style={styles.serviceText}>
+                  <div style={styles.serviceName}>{service.name}</div>
+                  {service.description && (
+                    <div style={styles.serviceDesc}>{service.description}</div>
+                  )}
+                </div>
+              </div>
+              <button
+                style={styles.chooseBtn}
+                onClick={() => { setSelectedService(service); setStep(2); }}
+              >
+                Choisir
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Info boxes */}
+        <div style={{ ...styles.infoBox, ...styles.warningBox }}>
+          <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '4px' }}>
+            Informations Urgence / Emergency
+          </div>
+          <div style={{ color: '#92400e' }}>
+            <strong>Important:</strong> en cas d&apos;urgence veuillez téléphoner directement au <strong>15</strong>.
+          </div>
+          <div style={{ color: '#92400e' }}>
+            <strong>Important:</strong> in case of emergency please call directly at <strong>04 86 31 94 11</strong>. If no let <strong>15</strong>
+          </div>
+        </div>
+
+        <div>
+          <span style={{ ...styles.badge, ...styles.badgePrimary }}>
+            MÉDECINE GÉNÉRALE ET SPÉCIALISÉE URGENCES
+          </span>
+          <span style={{ ...styles.badge, ...styles.badgeOutline }}>
+            CONVENTIONNÉ SECTEUR 2 AVEC L&apos;ASSURANCE MALADIE
+          </span>
+        </div>
+
+        <div style={{ marginTop: '16px', fontSize: '14px', color: '#6b7280' }}>
+          Maître de Stage des Universités
+        </div>
+
+        <div style={{ ...styles.infoBox, ...styles.grayBox }}>
+          <div style={{ fontWeight: 600, marginBottom: '4px' }}>À noter</div>
+          <div>
+            Un médecin collaborateur adjoint ou un remplaçant peut{' '}
+            <span style={{ color: '#3b82f6' }}>vous recevoir en l&apos;absence du Dr GRIMAUD</span>{' '}
+            dans ce cas vous serez informés avant.
+          </div>
+        </div>
+
+        <div style={{ ...styles.infoBox, ...styles.infoBoxBlue }}>
+          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: '4px' }}>RDV Télémédecine</div>
+          <div style={{ color: '#1e40af' }}>
+            Merci de penser a vous munir de votre <strong>carte vitale et mutuelle</strong> ou à défaut de vos attestations de droit.
+          </div>
+          <div style={{ color: '#1e40af' }}>Pour les bénéficiaires de la CMU aussi.</div>
+          <div style={{ color: '#1e40af' }}><strong>Moyens de paiement:</strong> virement bancaire, chèques, espèces.</div>
+        </div>
+
+        <div style={{ marginTop: '16px', marginBottom: '40px', fontSize: '14px' }}>
+          <a href="#" style={{ color: '#3b82f6' }}>www.ameli.direct.amelie.fr</a>
+          <div style={{ color: '#9ca3af', marginTop: '4px' }}>Démarche RSE et RGPD</div>
+        </div>
+      </div>
+    );
+  }
+
+  // PAGE 2: Date & Time
+  if (step === 2) {
+    return (
+      <div style={styles.container}>
+        <button style={styles.backBtn} onClick={() => setStep(1)}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Retour
+        </button>
+
+        <div style={styles.centerContent}>
+          <div style={styles.iconCircle}>
+            <svg width="28" height="28" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h1 style={styles.pageTitle}>Choisissez votre créneau</h1>
+          <p style={styles.subtitle}>Service sélectionné: <strong>{selectedService?.name}</strong></p>
+        </div>
+
+        <div style={styles.weekNav}>
+          <button style={styles.navBtn} onClick={() => {
+            const prev = new Date(weekStart);
+            prev.setDate(prev.getDate() - 7);
+            setWeekStart(prev);
+          }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Retour
+            Semaine précédente
           </button>
+          <span style={{ fontWeight: 500 }}>{getWeekLabel()}</span>
+          <button style={styles.navBtn} onClick={() => {
+            const next = new Date(weekStart);
+            next.setDate(next.getDate() + 7);
+            setWeekStart(next);
+          }}>
+            Semaine suivante
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
 
-          {/* Icon & Title */}
-          <div className="text-center mb-8">
-            <div className="icon-circle mx-auto mb-4">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div style={styles.daysGrid}>
+          {days.map((day) => (
+            <button
+              key={day.date.toISOString()}
+              onClick={() => setSelectedDay(day)}
+              style={{
+                ...styles.dayCard,
+                ...(selectedDay?.date.toDateString() === day.date.toDateString() ? styles.dayCardSelected : {})
+              }}
+            >
+              <div style={styles.dayName}>{day.dayName}</div>
+              <div style={styles.dayNum}>{day.dayNum}</div>
+              <div style={styles.dayMonth}>{day.month}</div>
+            </button>
+          ))}
+        </div>
+
+        {selectedDay && (
+          <>
+            <p style={styles.slotsLabel}>
+              Créneaux disponibles pour le {selectedDay.dayName.toLowerCase()} {selectedDay.dayNum} {selectedDay.month.toLowerCase()}
+            </p>
+            <div style={styles.slotsGrid}>
+              {timeSlots.map((time) => {
+                const isAvailable = availableSlots.includes(time);
+                const isSelected = selectedTime === time;
+                return (
+                  <button
+                    key={time}
+                    onClick={() => {
+                      if (isAvailable) {
+                        setSelectedTime(time);
+                        setStep(3);
+                      }
+                    }}
+                    style={{
+                      ...styles.slot,
+                      ...(isSelected ? styles.slotSelected : {}),
+                      ...(!isAvailable ? styles.slotUnavailable : {})
+                    }}
+                  >
+                    {time}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        <div style={{ height: '40px' }} />
+      </div>
+    );
+  }
+
+  // PAGE 3: Patient Form
+  if (step === 3) {
+    return (
+      <div style={styles.container}>
+        <button style={styles.backBtn} onClick={() => setStep(2)}>
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Retour
+        </button>
+
+        <div style={styles.formContainer}>
+          <div style={styles.centerContent}>
+            <div style={styles.iconCircle}>
+              <svg width="28" height="28" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Vos informations</h1>
-            <p className="text-gray-500">
-              {booking.service?.name} • {booking.date && booking.time && formatFullDate(booking.date, booking.time)}
+            <h1 style={styles.pageTitle}>Vos informations</h1>
+            <p style={styles.subtitle}>
+              {selectedService?.name} • {selectedDay && selectedTime && formatDate(selectedDay.date, selectedTime)}
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleFormSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit}>
+            <div style={styles.formGrid}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>
+                <label style={styles.formLabel}>Prénom *</label>
                 <input
                   type="text"
                   required
                   placeholder="Votre prénom"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  style={styles.formInput}
+                  value={patient.firstName}
+                  onChange={(e) => setPatient({ ...patient, firstName: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom *</label>
+                <label style={styles.formLabel}>Nom *</label>
                 <input
                   type="text"
                   required
                   placeholder="Votre nom"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  style={styles.formInput}
+                  value={patient.lastName}
+                  onChange={(e) => setPatient({ ...patient, lastName: e.target.value })}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+            <div style={styles.formField}>
+              <label style={styles.formLabel}>Email *</label>
               <input
                 type="email"
                 required
                 placeholder="votre.email@exemple.fr"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                style={styles.formInput}
+                value={patient.email}
+                onChange={(e) => setPatient({ ...patient, email: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone *</label>
+            <div style={styles.formField}>
+              <label style={styles.formLabel}>Téléphone *</label>
               <input
                 type="tel"
                 required
                 placeholder="06 12 34 56 78"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                style={styles.formInput}
+                value={patient.phone}
+                onChange={(e) => setPatient({ ...patient, phone: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date de naissance *</label>
+            <div style={styles.formField}>
+              <label style={styles.formLabel}>Date de naissance *</label>
               <input
                 type="date"
                 required
-                value={formData.birthDate}
-                onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                style={styles.formInput}
+                value={patient.birthDate}
+                onChange={(e) => setPatient({ ...patient, birthDate: e.target.value })}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Motif de consultation (optionnel)</label>
+            <div style={styles.formField}>
+              <label style={styles.formLabel}>Motif de consultation (optionnel)</label>
               <textarea
-                rows={3}
                 placeholder="Décrivez brièvement le motif de votre consultation..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                style={styles.formTextarea}
+                value={patient.notes}
+                onChange={(e) => setPatient({ ...patient, notes: e.target.value })}
               />
             </div>
 
-            {/* RGPD Note */}
-            <div className="info-box note">
-              <p className="text-gray-600 text-sm">
-                <strong>Note:</strong> Vos données personnelles sont traitées de manière confidentielle et conformément au RGPD.
-              </p>
+            <div style={styles.noteBox}>
+              <strong>Note:</strong> Vos données personnelles sont traitées de manière confidentielle et conformément au RGPD.
             </div>
 
-            <button type="submit" className="btn-primary">
+            <button type="submit" style={styles.submitBtn}>
               Confirmer le rendez-vous
             </button>
           </form>
         </div>
-      )}
+        <div style={{ height: '40px' }} />
+      </div>
+    );
+  }
 
-      {/* PAGE 4: CONFIRMATION */}
-      {currentStep === 'confirmation' && (
-        <div className="max-w-xl mx-auto p-6">
-          {/* Success Icon & Title */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  // PAGE 4: Confirmation
+  return (
+    <div style={styles.container}>
+      <div style={{ ...styles.formContainer, paddingTop: '40px' }}>
+        <div style={styles.centerContent}>
+          <div style={styles.successIcon}>
+            <svg width="40" height="40" fill="none" stroke="#22c55e" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 style={styles.pageTitle}>Rendez-vous confirmé !</h1>
+          <p style={styles.subtitle}>Un email de confirmation a été envoyé à {patient.email}</p>
+        </div>
+
+        <div style={styles.summaryBox}>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryIcon}>
+              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Rendez-vous confirmé !</h1>
-            <p className="text-gray-500">Un email de confirmation a été envoyé à {booking.patientInfo?.email}</p>
+            <div>
+              <div style={styles.summaryLabel}>Service</div>
+              <div style={styles.summaryValue}>{selectedService?.name}</div>
+            </div>
           </div>
 
-          {/* Booking Summary */}
-          <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="icon-circle-sm">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Service</p>
-                <p className="font-medium text-gray-900">{booking.service?.name}</p>
-              </div>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryIcon}>
+              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-
-            <div className="flex items-center gap-4">
-              <div className="icon-circle-sm">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Date et heure</p>
-                <p className="font-medium text-gray-900 capitalize">
-                  {booking.date && booking.time && formatFullDate(booking.date, booking.time)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="icon-circle-sm">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Lieu</p>
-                <p className="font-medium text-gray-900">{doctorInfo.address.name}</p>
-                <p className="text-sm text-gray-500">{doctorInfo.address.street}, {doctorInfo.address.postalCode} {doctorInfo.address.city}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="icon-circle-sm">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Patient</p>
-                <p className="font-medium text-gray-900">{booking.patientInfo?.firstName} {booking.patientInfo?.lastName}</p>
+            <div>
+              <div style={styles.summaryLabel}>Date et heure</div>
+              <div style={styles.summaryValue}>
+                {selectedDay && selectedTime && formatDate(selectedDay.date, selectedTime)}
               </div>
             </div>
           </div>
 
-          {/* Important Info */}
-          <div className="info-box warning mb-4">
-            <p className="font-semibold text-amber-800">Informations importantes</p>
-            <ul className="text-amber-700 text-sm mt-2 space-y-1">
-              <li>• Merci de vous munir de votre carte vitale et mutuelle</li>
-              <li>• En cas d&apos;empêchement, veuillez annuler au moins 24h à l&apos;avance</li>
-              <li>• Moyens de paiement: virement bancaire, chèques, espèces</li>
-            </ul>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryIcon}>
+              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <div style={styles.summaryLabel}>Lieu</div>
+              <div style={styles.summaryValue}>Centre Médical Pont de l&apos;Arc</div>
+              <div style={{ fontSize: '13px', color: '#6b7280' }}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</div>
+            </div>
           </div>
 
-          <div className="info-box emergency mb-6">
-            <p className="text-red-700 text-sm">
-              <strong>Urgence:</strong> En cas d&apos;urgence, appelez le <strong>15</strong> ou le <strong>{doctorInfo.phone}</strong>
-            </p>
+          <div style={{ ...styles.summaryItem, marginBottom: 0 }}>
+            <div style={styles.summaryIcon}>
+              <svg width="20" height="20" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <div style={styles.summaryLabel}>Patient</div>
+              <div style={styles.summaryValue}>{patient.firstName} {patient.lastName}</div>
+            </div>
           </div>
-
-          <button onClick={handleNewBooking} className="btn-primary">
-            Prendre un autre rendez-vous
-          </button>
         </div>
-      )}
+
+        <div style={{ ...styles.infoBox, ...styles.warningBox, marginTop: 0 }}>
+          <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '8px' }}>Informations importantes</div>
+          <ul style={{ color: '#92400e', paddingLeft: '16px', margin: 0 }}>
+            <li>Merci de vous munir de votre carte vitale et mutuelle</li>
+            <li>En cas d&apos;empêchement, veuillez annuler au moins 24h à l&apos;avance</li>
+            <li>Moyens de paiement: virement bancaire, chèques, espèces</li>
+          </ul>
+        </div>
+
+        <div style={{
+          ...styles.infoBox,
+          background: '#fee2e2',
+          borderLeft: '4px solid #ef4444',
+          marginBottom: '24px'
+        }}>
+          <span style={{ color: '#991b1b' }}>
+            <strong>Urgence:</strong> En cas d&apos;urgence, appelez le <strong>15</strong> ou le <strong>04 86 31 94 11</strong>
+          </span>
+        </div>
+
+        <button
+          style={styles.submitBtn}
+          onClick={() => {
+            setStep(1);
+            setSelectedService(null);
+            setSelectedDay(null);
+            setSelectedTime(null);
+            setPatient({ firstName: '', lastName: '', email: '', phone: '', birthDate: '', notes: '' });
+          }}
+        >
+          Prendre un autre rendez-vous
+        </button>
+      </div>
+      <div style={{ height: '40px' }} />
     </div>
   );
 }
