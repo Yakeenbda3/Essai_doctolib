@@ -119,27 +119,35 @@ export default function Home() {
       padding: '0 20px',
     } as React.CSSProperties,
 
-    // Header
-    header: {
+    // Header Card
+    headerCard: {
+      background: '#fff',
+      borderRadius: '16px',
+      border: '1px solid #e5e7eb',
+      padding: '20px',
+      marginTop: '20px',
+      marginBottom: '8px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    } as React.CSSProperties,
+
+    headerInner: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      padding: '20px 0',
-      borderBottom: '1px solid #e5e7eb',
-      gap: '20px',
+      gap: '16px',
       flexWrap: 'wrap' as const,
     } as React.CSSProperties,
 
     logo: {
-      width: '60px',
-      height: '60px',
+      width: '56px',
+      height: '56px',
       background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-      borderRadius: '8px',
+      borderRadius: '12px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       color: '#fff',
-      fontSize: '8px',
+      fontSize: '7px',
       fontWeight: 700,
       textAlign: 'center' as const,
       lineHeight: 1.2,
@@ -148,14 +156,27 @@ export default function Home() {
 
     headerLeft: {
       display: 'flex',
-      gap: '12px',
-      alignItems: 'flex-start',
+      gap: '14px',
+      alignItems: 'center',
+    } as React.CSSProperties,
+
+    headerTitle: {
+      fontSize: '15px',
+      fontWeight: 600,
+      color: '#111827',
+      marginBottom: '2px',
+    } as React.CSSProperties,
+
+    headerSubtitle: {
+      fontSize: '13px',
+      color: '#6b7280',
     } as React.CSSProperties,
 
     headerRight: {
       textAlign: 'right' as const,
       fontSize: '12px',
       color: '#6b7280',
+      lineHeight: 1.6,
     } as React.CSSProperties,
 
     // Services
@@ -524,23 +545,24 @@ export default function Home() {
   if (step === 1) {
     return (
       <div style={styles.container}>
-        {/* Header */}
-        <header style={styles.header}>
-          <div style={styles.headerLeft}>
-            <div style={styles.logo}>CENTRE<br/>MÉDICAL<br/>PONT DE L&apos;ARC</div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                Centre Médical Pont de l&apos;Arc - 4 Rue Frédéric ROSA, 13090 Aix-en-Provence
+        {/* Header Card */}
+        <div style={styles.headerCard}>
+          <div style={styles.headerInner}>
+            <div style={styles.headerLeft}>
+              <div style={styles.logo}>CENTRE<br/>MÉDICAL<br/>PONT DE L&apos;ARC</div>
+              <div>
+                <div style={styles.headerTitle}>Centre Médical Pont de l&apos;Arc</div>
+                <div style={styles.headerSubtitle}>4 Rue Frédéric ROSA, 13090 Aix-en-Provence</div>
               </div>
             </div>
+            <div style={styles.headerRight}>
+              <div>4 rue Frédéric Rosa</div>
+              <div>13090 Aix-en-Provence</div>
+              <div style={{ color: '#3b82f6' }}>04 86 31 94 11</div>
+              <div style={{ color: '#3b82f6' }}>aixecho462@gmail.com</div>
+            </div>
           </div>
-          <div style={styles.headerRight}>
-            <div>4 rue Frédéric Rosa</div>
-            <div>13090 Aix-en-Provence</div>
-            <div style={{ color: '#3b82f6' }}>04 86 31 94 11</div>
-            <div style={{ color: '#3b82f6' }}>aixecho462@gmail.com</div>
-          </div>
-        </header>
+        </div>
 
         {/* Services */}
         <h1 style={styles.title}>Prendre rendez-vous pour</h1>
