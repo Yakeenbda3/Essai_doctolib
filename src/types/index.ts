@@ -2,8 +2,8 @@ export interface Service {
   id: string;
   name: string;
   description: string;
-  icon: string;
-  duration: number; // in minutes
+  image: string;
+  duration: number;
 }
 
 export interface TimeSlot {
@@ -32,7 +32,6 @@ export interface PatientInfo {
   email: string;
   phone: string;
   birthDate: string;
-  isNewPatient: boolean;
   notes: string;
 }
 

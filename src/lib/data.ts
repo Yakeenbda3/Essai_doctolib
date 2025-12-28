@@ -4,92 +4,92 @@ export const services: Service[] = [
   {
     id: 'consultation',
     name: 'Consultation',
-    description: 'Consultation médicale générale',
-    icon: '🩺',
+    description: 'Adulte(s) connu(s)',
+    image: '/images/consultation.jpg',
     duration: 15,
   },
   {
     id: 'nouveau-patient',
     name: 'Nouveau patient',
-    description: 'Première consultation pour nouveaux patients',
-    icon: '👤',
+    description: '',
+    image: '/images/nouveau-patient.jpg',
     duration: 30,
   },
   {
     id: 'echographie',
     name: 'Échographie',
-    description: 'Utérus, Vésicule, Grossesse, Musculo-squelettique, Endocavitaire',
-    icon: '📊',
+    description: 'Rein - Vésicule - Grossesse - Musculo-squelettique - Endocavitaire -',
+    image: '/images/echographie.jpg',
     duration: 30,
   },
   {
     id: 'depistage-covid',
     name: 'Dépistage Covid Antigénique PCR',
-    description: 'Lèvres, Sein, Utérus, Prostate, Mélanome, Poumons',
-    icon: '🧪',
+    description: 'A PCR, Sein, RDV, Antique, Prélèvement Déplacements Résultat utérus médical',
+    image: '/images/depistage.jpg',
     duration: 15,
   },
   {
     id: 'grossesse',
     name: 'Grossesse',
-    description: 'Suivi, examen clinique et échographie',
-    icon: '🤰',
+    description: 'Suivi obstétrical et échographie',
+    image: '/images/grossesse.jpg',
     duration: 30,
   },
   {
     id: 'gynecologie',
     name: 'Gynécologie médicale',
-    description: 'Troubles du cycle, Contraception, pose de DIU, Ménopause, Frottis MST',
-    icon: '💜',
+    description: 'Troubles du VPC, Contraception, Spire de S.I.U. Ménopause',
+    image: '/images/gynecologie.jpg',
     duration: 30,
   },
   {
     id: 'telemedecine',
     name: 'Télémédecine dont COVID-19',
-    description: 'Consultation à distance par vidéo',
-    icon: '💻',
+    description: 'Permet vos RDV dans le cabinet téléconseol',
+    image: '/images/telemedecine.jpg',
     duration: 15,
   },
   {
     id: 'aptitude-sportive',
     name: 'Aptitude sportive',
-    description: 'Tous sports - Électrocardiogramme',
-    icon: '🏃',
+    description: 'Viocellini - Certificat médicopportment -',
+    image: '/images/aptitude.jpg',
     duration: 20,
   },
   {
     id: 'suture',
     name: 'Suture',
-    description: 'Anesthésie locale',
-    icon: '🩹',
+    description: 'ClosedSolution',
+    image: '/images/suture.jpg',
     duration: 30,
   },
   {
-    id: 'etudiant-stagiaire',
-    name: 'Étudiant/Stagiaire',
-    description: 'Consultation pour étudiants et stagiaires',
-    icon: '🎓',
-    duration: 15,
+    id: 'allaitement-pediatrie',
+    name: 'allaitement/pédiatrie',
+    description: '',
+    image: '/images/pediatrie.jpg',
+    duration: 30,
   },
   {
     id: 'conseils-voyageurs',
     name: 'Conseils aux voyageurs / Travel advice',
-    description: 'Évaluation des risques sanitaires selon le pays, Prévention, Country risk assessment',
-    icon: '✈️',
+    description: 'Colonial époque - Prévention - Certifie ride assessment',
+    image: '/images/voyageurs.jpg',
     duration: 20,
   },
   {
     id: 'pressotherapie',
-    name: 'Pressothérapie',
-    description: 'Traitement par pression',
-    icon: '💆',
+    name: 'PRESSOTHERAPIE',
+    description: '',
+    image: '/images/pressotherapie.jpg',
     duration: 45,
   },
   {
     id: 'rdv-professionnel',
-    name: 'Rendez-vous professionnel',
-    description: 'Consultations professionnelles',
-    icon: '💼',
+    name: 'RENDEZ-VOUS PROFESSIONNEL',
+    description: '',
+    image: '/images/professionnel.jpg',
     duration: 30,
   },
 ];
@@ -113,53 +113,52 @@ export const doctorInfo = {
   website: 'www.ameli.direct.amelie.fr',
 };
 
-// Generate mock schedule for a week
+// Generate week schedule starting from a specific date
 export function generateWeekSchedule(startDate: Date): DaySchedule[] {
   const days: DaySchedule[] = [];
-  const dayNames = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  const monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  const dayNames = ['Dim.', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Sam.'];
+  const monthNamesShort = ['Janv.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
+  // Start from Monday
+  const monday = new Date(startDate);
+  const dayOfWeek = monday.getDay();
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  monday.setDate(monday.getDate() + diff);
 
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  // Only show weekdays (Mon-Fri)
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
 
     const slots: TimeSlot[] = [];
-    const startHour = 8;
-    const endHour = 18;
 
-    for (let hour = startHour; hour <= endHour; hour++) {
-      // Create slots at :00 and :30
-      for (const minutes of ['00', '30']) {
-        if (hour === endHour && minutes === '30') continue;
+    // Generate time slots from 08:00 to 18:00
+    const times = [
+      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+      '16:00', '16:30', '17:00', '17:30', '18:00'
+    ];
 
-        const time = `${hour.toString().padStart(2, '0')}:${minutes}`;
+    times.forEach((time) => {
+      // Simulate availability - some slots are taken
+      const hour = parseInt(time.split(':')[0]);
+      let available = true;
 
-        // Weekend has limited availability, some random availability during week
-        let available = false;
-        if (!isWeekend) {
-          // Simulate some booked slots randomly
-          available = Math.random() > 0.3;
-          // Lunch break typically unavailable
-          if (hour === 12 || hour === 13) {
-            available = false;
-          }
-        } else if (dayOfWeek === 6) {
-          // Saturday morning only
-          available = hour >= 8 && hour < 12 && Math.random() > 0.5;
-        }
-
-        slots.push({ time, available });
+      // Lunch time less available
+      if (hour === 12 || hour === 13) {
+        available = Math.random() > 0.7;
+      } else {
+        available = Math.random() > 0.4;
       }
-    }
+
+      slots.push({ time, available });
+    });
 
     days.push({
       date,
-      dayName: dayNames[dayOfWeek],
+      dayName: dayNames[date.getDay()],
       dayNumber: date.getDate(),
-      month: monthNames[date.getMonth()],
+      month: monthNamesShort[date.getMonth()],
       slots,
     });
   }
